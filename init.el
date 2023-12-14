@@ -119,7 +119,7 @@
   :hook
   ((prog-mode . (lambda ()
 		  (unless (derived-mode-p 'python-base-mode)
-		    aggressive-indent-mode)))))
+		    (aggressive-indent-mode))))))
 
 (use-package rainbow-delimiters
   :hook
@@ -664,16 +664,36 @@
 	    (find-file (concat (getenv "HOME") "/Math")))
 
 (defvar configurations
-  `(("guix-system-config" . "/etc/system-config/config.scm")
-    ("guix-home-config" . ,(concat (getenv "HOME") "/src/guix-config/home-configuration.scm"))
-    ("guix-channels-config" . ,(concat (getenv "HOME") "/.config/guix/channels.scm"))
-    ("emacs-init" . ,user-init-file)
-    ("sway" . ,(concat (getenv "HOME") "/.config/sway/config"))))
+  (let ((home (getenv "HOME")))
+    `((guix-system-config . "/etc/system-config/config.scm")
+      (guix-home-config . ,(concat home "/src/guix-config/home-configuration.scm"))
+      (guix-channels-config . ,(concat home "/.config/guix/channels.scm"))
+      (emacs-init . ,user-init-file)
+      (sway-config . ,(concat home "/.config/sway/config"))
+      (ssh-home-config . ,(concat home "/.ssh/config")))))
+
+
+(cl-flet ((extract (lambda (sym)
+		     `(regexp ,(cdr (assoc sym configurations))))))
+  (setq geiser-implementations-alist
+	(append `((,(extract 'guix-system-config) guile)
+		  (,(extract 'guix-home-config) guile)
+		  (,(extract 'guix-channels-config) guile))
+		geiser-implementations-alist)))
+
+(defmacro make-config-opening-functions (configs)
+  `(progn ,@(mapcar (lambda (config)
+		      `(defun ,(intern (concat "open-" (symbol-name (car config)))) ()
+			 (interactive)
+			 (find-file ,(cdr config))))
+		    (eval configs))))
+
+(make-config-opening-functions configurations)
 
 (defun-bind open-configs ()
 	    evil-motion-state-map
 	    "<SPC> c"
-	    (find-file (cdr (assoc (completing-read "Config: " configurations nil t)
+	    (find-file (cdr (assoc (intern (completing-read "Config: " configurations nil t))
 				   configurations))))
 
 
