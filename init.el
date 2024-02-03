@@ -89,9 +89,9 @@
 
 (use-package geiser-chez)
 
-(use-package geiser-racket
-  :config
-  (geiser-activate-implementation 'racket))
+;; (use-package geiser-racket
+;;   :config
+;;   (geiser-activate-implementation 'racket))
 
 (use-package geiser
   :custom
@@ -119,7 +119,7 @@
   :hook
   ((prog-mode . (lambda ()
 		  (unless (derived-mode-p 'python-base-mode)
-		    aggressive-indent-mode)))))
+		    (aggressive-indent-mode))))))
 
 (use-package rainbow-delimiters
   :hook
@@ -279,6 +279,10 @@
   (add-hook 'text-mode-hook #'enable-show-trailing-whitespace)
   (add-hook 'prog-mode-hook #'enable-show-trailing-whitespace))
 
+(use-package repeat
+  :config
+  (repeat-mode))
+
 (use-package whitespace
   :config
   (add-hook 'before-save-hook #'whitespace-cleanup)
@@ -317,11 +321,11 @@
 
   (setq backup-by-copying t)
   (defadvice find-file (before make-directory-maybe (filename &optional wildcards) activate)
-  "Create parent directory if not exists while visiting file."
-  (unless (file-exists-p filename)
-    (let ((dir (file-name-directory filename)))
-      (unless (file-exists-p dir)
-	(make-directory dir t))))))
+    "Create parent directory if not exists while visiting file."
+    (unless (file-exists-p filename)
+      (let ((dir (file-name-directory filename)))
+	(unless (file-exists-p dir)
+	  (make-directory dir t))))))
 
 (use-package comint
   :bind
@@ -663,17 +667,39 @@
 	    "<SPC> m"
 	    (find-file (concat (getenv "HOME") "/Math")))
 
-(defvar configurations
-  `(("guix-system-config" . "/etc/system-config/config.scm")
-    ("guix-home-config" . ,(concat (getenv "HOME") "/src/guix-config/home-configuration.scm"))
-    ("guix-channels-config" . ,(concat (getenv "HOME") "/.config/guix/channels.scm"))
-    ("emacs-init" . ,user-init-file)
-    ("sway" . ,(concat (getenv "HOME") "/.config/sway/config"))))
+(defmacro configurations (lst)
+  (let ((lst (eval lst)))
+    `(progn
+       (defvar configurations
+	 (quote ,lst))
+       ,@(mapcar (lambda (entry)
+		   `(defun ,(intern (concat "open-"
+					   (symbol-name (car entry))))
+			()
+		      (interactive)
+		      (find-file (cdr (assoc (quote ,(car entry)) configurations)))))
+		 lst))))
+
+(configurations
+ `((guix-system-config . "/etc/system-config/config.scm")
+   (guix-home-config . ,(concat (getenv "HOME") "/src/guix-config/home-configuration.scm"))
+   (guix-channels-config . ,(concat (getenv "HOME") "/.config/guix/channels.scm"))
+   (emacs-init . ,user-init-file)
+   (sway . ,(concat (getenv "HOME") "/.config/sway/config"))))
+
+(defun set-configuration-geiser-implementation (config impl)
+  (add-to-list 'geiser-implementations-alist
+	       `((regexp ,(regexp-quote (cdr (assoc config configurations))))
+		     ,impl)))
+
+(set-configuration-geiser-implementation 'guix-system-config 'guile)
+(set-configuration-geiser-implementation 'guix-home-config 'guile)
+(set-configuration-geiser-implementation 'guix-channels-config 'guile)
 
 (defun-bind open-configs ()
 	    evil-motion-state-map
 	    "<SPC> c"
-	    (find-file (cdr (assoc (completing-read "Config: " configurations nil t)
+	    (find-file (cdr (assoc (intern (completing-read "Config: " configurations nil t))
 				   configurations))))
 
 
