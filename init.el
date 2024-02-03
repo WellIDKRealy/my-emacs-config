@@ -1,5 +1,15 @@
 (require 'use-package)
 
+;; (use-package use-package
+;;   :custom
+;;   (use-package-always-ensure t))
+
+(use-package package
+  :config
+  (add-to-list 'package-archives
+	       '("melpa" . "https://melpa.org/packages/") t)
+  (package-initialize))
+
 (use-package evil
   :custom
   (evil-want-minibuffer t)
@@ -58,28 +68,28 @@
   (unless (display-graphic-p)
     (corfu-terminal-mode +1)))
 
-(use-package vterm
-  :bind
-  (:map evil-motion-state-map
-	("<SPC> t" . vterm))
-  :config
-  (defvar vterm-new--index 0)
-  (defun vterm-new (x)
-    (interactive (list vterm-new--index))
-    (if (get-buffer (format "%s<%d>"
-			    vterm-buffer-name
-			    x))
-	(vterm-new (+ 1 x))
-      (progn
-	(setq vterm-new--index (+ 1 x))
-	(vterm x)))))
+;; (use-package vterm
+;;   :bind
+;;   (:map evil-motion-state-map
+;;	("<SPC> t" . vterm))
+;;   :config
+;;   (defvar vterm-new--index 0)
+;;   (defun vterm-new (x)
+;;     (interactive (list vterm-new--index))
+;;     (if (get-buffer (format "%s<%d>"
+;;			    vterm-buffer-name
+;;			    x))
+;;	(vterm-new (+ 1 x))
+;;       (progn
+;;	(setq vterm-new--index (+ 1 x))
+;;	(vterm x)))))
 
-(use-package eat
-  :config
-  (add-hook 'eshell-first-time-mode-hook
-	    #'eat-eshell-visual-command-mode)
+;; (use-package eat
+;;   :config
+;;   (add-hook 'eshell-first-time-mode-hook
+;;	    #'eat-eshell-visual-command-mode)
 
-  (add-hook 'eshell-first-time-mode-hook #'eat-eshell-mode))
+;;   (add-hook 'eshell-first-time-mode-hook #'eat-eshell-mode))
 
 (use-package eglot)
 
@@ -111,9 +121,9 @@
 	("<up>" . #'comint-previous-input)
 	("<down>" . #'comint-next-input)))
 
-(use-package lipsy
-  :hook
-  ((generic-lisp-mode . lispy-mode)))
+;; (use-package lipsy
+;;   :hook
+;;   ((generic-lisp-mode . lispy-mode)))
 
 (use-package aggressive-indent
   :hook
@@ -134,7 +144,7 @@
 
 (use-package flyspell
   :custom
-  (ispell-program-name "aspell")
+  (ispell-program-name "c:/msys64/usr/bin/aspell.exe")
   (ispell-extra-args '("--sug-mode=ultra" "--lang=en_US" "--run-together" "--run-together-limit=16 --camel-case"))
   :hook
   ((text-mode . flyspell-mode)
@@ -159,8 +169,6 @@
 ;;   (which-key-mode))
 
 (use-package cape
-  :custom
-  (cape-dict-file (concat (getenv "HOME") "/Documents/Dicits/english"))
   :init
   (add-to-list 'completion-at-point-functions #'cape-dabbrev)
   (add-to-list 'completion-at-point-functions #'cape-file)
@@ -170,22 +178,6 @@
 
 (use-package tex
   :ensure auctex)
-
-(use-package agda2-mode)
-
-;; (use-package agda-input
-;;   :hook
-;;   ((agda2-mode . (lambda ()
-;;		   (add-hook evil-insert-state-entry-hook
-;;			     (lambda ()
-;;			       (set-input-method "Agda"))
-;;			     nil
-;;			     t)
-;;		   (add-hook evil-insert-state-exit-hook
-;;			     (lambda ()
-;;			       (set-input-method nil))
-;;			     nil
-;;			     t)))))
 
 ;; OCAML
 
@@ -202,69 +194,10 @@
 
 (use-package magit)
 
-(use-package mu4e
-  :custom
-  (mu4e-contexts
-   `(,(make-mu4e-context
-       :name "Outlook"
-       :match-func
-       (lambda (msg) (when msg (string-prefix-p "/Outlook")
-			   (mu4e-message-field msg :maildir)))
-       :vars
-       '((mu4e-trash-folder . "/Outlook/Junk")
-	 (mu4e-refile-folder . "/Outlook/Archive"))
-       )))
-  (smtpmail-servers-requiring-authorization
-   ".*")
-  :config
-  (defvar mu4e-account-alist
-    '(("Outlook"
-       (mu4e-sent-folder "/Outlook/Sent/")
-       (user-mail-address "m.kalandyk@outlook.com")
-       (smtpmail-smtp-user "m.kalandyk@outlook.com")
-       (smtpmail-local-domain "outlook.com")
-       (smtpmail-default-smtp-server "smtp.office365.com")
-       (smtpmail-smtp-server "smtp.office365.com")
-       (smtpmail-stream-type starttls)
-       (smtpmail-smtp-service 587))))
-
-  (mapc (lambda (var)
-	  (set (car var) (cadr var)))
-	(cdar mu4e-account-alist))
-
-  (defun mu4e-set-account ()
-    "Set the account for composing a message.
-   This function is taken from:
-   https://www.djcbsoftware.nl/code/mu/mu4e/Multiple-accounts.html"
-    (let* ((account
-	    (if mu4e-compose-parent-message
-		(let ((maildir (mu4e-message-field mu4e-compose-parent-message :maildir)))
-		  (string-match "/\\(.*?\\)/" maildir)
-		  (match-string 1 maildir))
-	      (completing-read (format "Compose with account: (%s) "
-				       (mapconcat #'(lambda (var) (car var))
-						  mu4e-account-alist "/"))
-			       (mapcar #'(lambda (var) (car var)) mu4e-account-alist)
-			       nil t nil nil (caar mu4e-account-alist))))
-	   (account-vars (cdr (assoc account mu4e-account-alist))))
-      (if account-vars
-	  (mapc #'(lambda (var)
-		    (set (car var) (cadr var)))
-		account-vars)
-	(error "No email account found"))))
-  (add-hook 'mu4e-compose-pre-hook 'mu4e-set-account))
-
 ;; Load agda
 
 ;; (load-file (let ((coding-system-for-read 'utf-8))
 ;;              (shell-command-to-string "agda-mode locate")))
-
-;; GUIX
-(use-package guix
-  :custom
-  (guix-dot-program "dot"))
-
-(use-package guix-repl)
 
 ;; Built ins
 (use-package emacs
@@ -394,6 +327,11 @@
 ;;   (:map eshell-hist-mode-map
 ;;	("M-r" . #'comint-history-search)))
 
+
+(use-package eshell
+  :bind
+  (:map evil-motion-state-map
+	("<SPC> t" . eshell)))
 
 (use-package ielm
   :bind
@@ -667,43 +605,9 @@
 	    "<SPC> m"
 	    (find-file (concat (getenv "HOME") "/Math")))
 
-<<<<<<< HEAD
-(defmacro configurations (lst)
-  (let ((lst (eval lst)))
-    `(progn
-       (defvar configurations
-	 (quote ,lst))
-       ,@(mapcar (lambda (entry)
-		   `(defun ,(intern (concat "open-"
-					   (symbol-name (car entry))))
-			()
-		      (interactive)
-		      (find-file (cdr (assoc (quote ,(car entry)) configurations)))))
-		 lst))))
-
-(configurations
- `((guix-system-config . "/etc/system-config/config.scm")
-   (guix-home-config . ,(concat (getenv "HOME") "/src/guix-config/home-configuration.scm"))
-   (guix-channels-config . ,(concat (getenv "HOME") "/.config/guix/channels.scm"))
-   (emacs-init . ,user-init-file)
-   (sway . ,(concat (getenv "HOME") "/.config/sway/config"))))
-
-(defun set-configuration-geiser-implementation (config impl)
-  (add-to-list 'geiser-implementations-alist
-	       `((regexp ,(regexp-quote (cdr (assoc config configurations))))
-		     ,impl)))
-
-(set-configuration-geiser-implementation 'guix-system-config 'guile)
-(set-configuration-geiser-implementation 'guix-home-config 'guile)
-(set-configuration-geiser-implementation 'guix-channels-config 'guile)
-=======
 (defvar configurations
   (let ((home (getenv "HOME")))
-    `((guix-system-config . "/etc/system-config/config.scm")
-      (guix-home-config . ,(concat home "/src/guix-config/home-configuration.scm"))
-      (guix-channels-config . ,(concat home "/.config/guix/channels.scm"))
-      (emacs-init . ,user-init-file)
-      (sway-config . ,(concat home "/.config/sway/config"))
+    `((emacs-init . ,user-init-file)
       (ssh-home-config . ,(concat home "/.ssh/config")))))
 
 
@@ -723,7 +627,6 @@
 		    (eval configs))))
 
 (make-config-opening-functions configurations)
->>>>>>> f85727a6a185cd92d0e332b7fbe4e47d8b13c9a3
 
 (defun-bind open-configs ()
 	    evil-motion-state-map
@@ -764,7 +667,9 @@
  ;; If there is more than one, they won't work right.
  '(custom-enabled-themes '(monokai))
  '(custom-safe-themes
-   '("b1a691bb67bd8bd85b76998caf2386c9a7b2ac98a116534071364ed6489b695d" "19a2c0b92a6aa1580f1be2deb7b8a8e3a4857b6c6ccf522d00547878837267e7" "2ff9ac386eac4dffd77a33e93b0c8236bb376c5a5df62e36d4bfa821d56e4e20" "72ed8b6bffe0bfa8d097810649fd57d2b598deef47c992920aef8b5d9599eefe" "d80952c58cf1b06d936b1392c38230b74ae1a2a6729594770762dc0779ac66b7" "95b0bc7b8687101335ebbf770828b641f2befdcf6d3c192243a251ce72ab1692" "f4835f97c034b7f3c512b177bbaebebee35d11baa0c9b95a9029e45962bc34c8" default))
+   '("37c8c2817010e59734fe1f9302a7e6a2b5e8cc648cf6a6cc8b85f3bf17fececf" "b1a691bb67bd8bd85b76998caf2386c9a7b2ac98a116534071364ed6489b695d" "19a2c0b92a6aa1580f1be2deb7b8a8e3a4857b6c6ccf522d00547878837267e7" "2ff9ac386eac4dffd77a33e93b0c8236bb376c5a5df62e36d4bfa821d56e4e20" "72ed8b6bffe0bfa8d097810649fd57d2b598deef47c992920aef8b5d9599eefe" "d80952c58cf1b06d936b1392c38230b74ae1a2a6729594770762dc0779ac66b7" "95b0bc7b8687101335ebbf770828b641f2befdcf6d3c192243a251ce72ab1692" "f4835f97c034b7f3c512b177bbaebebee35d11baa0c9b95a9029e45962bc34c8" default))
+ '(package-selected-packages
+   '(auctex lv monokai-theme zoutline lispy prog-mode treesit scroll-bar tool-bar window comint files uniquify merlin agda2-mode flycheck prism lipsy geiser-guile dtrt-indent evil-collection vertico tuareg sly rainbow-delimiters orderless marginalia magit geiser-chez evil embark eat corfu-terminal cape aggressive-indent))
  '(safe-local-variable-values
    '((geiser-repl-per-project-p . t)
      (eval progn
