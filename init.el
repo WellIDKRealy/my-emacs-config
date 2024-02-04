@@ -667,36 +667,6 @@
 	    "<SPC> m"
 	    (find-file (concat (getenv "HOME") "/Math")))
 
-<<<<<<< HEAD
-(defmacro configurations (lst)
-  (let ((lst (eval lst)))
-    `(progn
-       (defvar configurations
-	 (quote ,lst))
-       ,@(mapcar (lambda (entry)
-		   `(defun ,(intern (concat "open-"
-					   (symbol-name (car entry))))
-			()
-		      (interactive)
-		      (find-file (cdr (assoc (quote ,(car entry)) configurations)))))
-		 lst))))
-
-(configurations
- `((guix-system-config . "/etc/system-config/config.scm")
-   (guix-home-config . ,(concat (getenv "HOME") "/src/guix-config/home-configuration.scm"))
-   (guix-channels-config . ,(concat (getenv "HOME") "/.config/guix/channels.scm"))
-   (emacs-init . ,user-init-file)
-   (sway . ,(concat (getenv "HOME") "/.config/sway/config"))))
-
-(defun set-configuration-geiser-implementation (config impl)
-  (add-to-list 'geiser-implementations-alist
-	       `((regexp ,(regexp-quote (cdr (assoc config configurations))))
-		     ,impl)))
-
-(set-configuration-geiser-implementation 'guix-system-config 'guile)
-(set-configuration-geiser-implementation 'guix-home-config 'guile)
-(set-configuration-geiser-implementation 'guix-channels-config 'guile)
-=======
 (defvar configurations
   (let ((home (getenv "HOME")))
     `((guix-system-config . "/etc/system-config/config.scm")
@@ -723,7 +693,6 @@
 		    (eval configs))))
 
 (make-config-opening-functions configurations)
->>>>>>> f85727a6a185cd92d0e332b7fbe4e47d8b13c9a3
 
 (defun-bind open-configs ()
 	    evil-motion-state-map
